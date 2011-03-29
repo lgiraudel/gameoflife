@@ -20,7 +20,11 @@ GoL.Board = (function() {
 		_tick,
 		_start,
 		_stop,
-		_createMap;
+		_createMap,
+		_stringToBin,
+		_charToBin,
+		_initCells,
+		_getLiveNeighbours;
 	
 	_Constr = function(config) {
 		var i;
@@ -30,8 +34,9 @@ GoL.Board = (function() {
 		
 		_cells = _createMap();
 		
+		_initCells('abcde');
 		this.cells = _cells;
-		
+				
 		this.start();
 	}
 	
@@ -50,7 +55,6 @@ GoL.Board = (function() {
 
 				if (_cells[x][y]) {
 					// Cell is alive
-					GoL.log(x + ',' + y + ' is alive with ' + liveNeighbours + ' live neighbours.');
 					
 					// rule 2
 					if (liveNeighbours === 2 || liveNeighbours === 3) {
@@ -61,7 +65,6 @@ GoL.Board = (function() {
 					}
 				} else {
 					// Cell is dead
-					GoL.log(x + ',' + y + ' is dead with ' + liveNeighbours + ' live neighbours.');
 					
 					// rule 4
 					if (liveNeighbours === 3) {
@@ -113,6 +116,38 @@ GoL.Board = (function() {
 		
 		return count;
 	}
+	_initCells = function(str) {
+		var strAsBin = _stringToBin(str);
+		console.log(strAsBin);
+		
+		var x = _width, y, i = strAsBin.length;
+		while (x--) {
+			y = _height;
+			while (y--) {
+				_cells[_width - x - 1][_height - y - 1] = strAsBin[strAsBin.length - (--i) - 1] === '1';
+				
+				if (!i) i = strAsBin.length;
+			}
+		}
+	};
+	
+	_stringToBin = function(str) {
+		var res = '';
+		for (var c in str) {
+			res += _charToBin(str.charCodeAt(c));
+		}
+		return res;
+	};
+	_charToBin = function(c) {
+		var res = '', i = 8;
+
+		while (i--) {
+			var tmp = c >> i;
+			if (tmp) c ^= ((1) << i);
+			res += tmp;
+		}
+		return res;
+	};
 	
 	_Constr.prototype = {
 		start: _start,
