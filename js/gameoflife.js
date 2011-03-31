@@ -15,6 +15,11 @@ GoL.Board = (function() {
 		_height,
 		_interval,
 		_cells,
+		_callbacks = {
+			fn: undefined,
+			scope: undefined
+		},
+		_speed,
 		
 		// Private methods
 		_tick,
@@ -31,17 +36,20 @@ GoL.Board = (function() {
 
 		_width = config.width || 10;
 		_height = config.height || 10;
+		_speed = config.speed || 1000;
+		
+		if (typeof config.callbacks !== 'undefined') {
+			_callbacks = config.callbacks;
+		}
 		
 		_cells = _createMap();
 		
-		_initCells('abcde');
+		_initCells('abcdefghijklmnopqrstuvwxyz');
 		this.cells = _cells;
-				
-		this.start();
 	}
 	
 	_tick = function() {
-		GoL.log('_tick()');
+		_callbacks.tickStart.call(_callbacks.scope);
 		
 		var newCells = _createMap(),
 			x = _width,
@@ -73,23 +81,27 @@ GoL.Board = (function() {
 						newCells[x][y] = false;
 					}
 				}
+				
+				_callbacks.refreshCell.call(_callbacks.scope, x, y, newCells[x][y]);
 			}
 		}
 		
 		_cells = newCells;
 		this.cells = _cells;
+
+		_callbacks.tickEnd.call(_callbacks.scope);
+		//if (typeof _callbackOnTick.fn !== 'undefined') {
+		//	_callbackOnTick.fn.call(_callbackOnTick.scope, _cells);
+		//}
 	};
 	_start = function() {
-		GoL.log('_start()');
-		
 		_stop();
 		
 		_interval = setInterval(function() {
 			_tick();
-		}, 1000);
+		}, _speed);
 	};
 	_stop = function() {
-		GoL.log('_stop()');
 		clearInterval(_interval);
 	};
 	_createMap = function() {
@@ -118,15 +130,14 @@ GoL.Board = (function() {
 	}
 	_initCells = function(str) {
 		var strAsBin = _stringToBin(str);
-		console.log(strAsBin);
 		
-		var x = _width, y, i = strAsBin.length;
-		while (x--) {
-			y = _height;
-			while (y--) {
-				_cells[_width - x - 1][_height - y - 1] = strAsBin[strAsBin.length - (--i) - 1] === '1';
+		var x = _width, y, i = 0;
+		for (x = 0; x < _width; x++) {
+			//y = _height;
+			for (y = 0; y < _height; y++) {
+				_cells[x][y] = strAsBin[i++] === '1';
 				
-				if (!i) i = strAsBin.length;
+				if (i == strAsBin.length) i = 0;
 			}
 		}
 	};
@@ -152,15 +163,8 @@ GoL.Board = (function() {
 	_Constr.prototype = {
 		start: _start,
 		stop: _stop,
-		step: _tick
+		tick: _tick
 	};
 	
 	return _Constr;
 }());
-
-var board = new GoL.Board({
-	width: 3,
-	height: 5
-});
-board.stop();
-GoL.log(board.cells);
